@@ -2,32 +2,34 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
+        'avatar',
+        'bio',
+        'location',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -48,14 +50,39 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's initials
+     * Get all posts by this user
      */
-    public function initials(): string
+    public function posts(): HasMany
     {
-        return Str::of($this->name)
-            ->explode(' ')
-            ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
-            ->implode('');
+        return $this->hasMany(Post::class);
+    }
+
+    /**
+     * Get published posts by this user
+     */
+    public function publishedPosts(): HasMany
+    {
+        return $this->hasMany(Post::class)
+                   ->where('status', 'published')
+                   ->whereNotNull('published_at')
+                   ->orderBy('published_at', 'desc');
+    }
+
+    /**
+     * Get the user's avatar URL or default
+     */
+    public function getAvatarUrlAttribute(): string
+    {
+        return $this->avatar 
+            ? asset('storage/' . $this->avatar)
+            : 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=6366f1&color=white';
+    }
+
+    /**
+     * Get user's full profile URL
+     */
+    public function getProfileUrlAttribute(): string
+    {
+        return route('user.profile', $this->username);
     }
 }
