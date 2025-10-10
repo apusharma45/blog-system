@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -21,7 +23,13 @@ class Post extends Model
         'slug',
         'content',
         'excerpt',
+        'featured_image',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
+        'view_count',
         'status',
+        'is_featured',
         'published_at',
     ];
 
@@ -32,6 +40,8 @@ class Post extends Model
     {
         return [
             'published_at' => 'datetime',
+            'meta_keywords' => 'array',
+            'view_count' => 'integer',
         ];
     }
 
@@ -101,6 +111,38 @@ class Post extends Model
     }
 
     /**
+     * Post's comments
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Post's likes
+     */
+    public function likes(): HasMany
+    {
+        return $this->hasMany(Like::class);
+    }
+
+    /**
+     * Categories associated with the post
+     */
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'post_categories')->withTimestamps();
+    }
+
+    /**
+     * Tags associated with the post
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class, 'post_tags')->withTimestamps();
+    }
+
+    /**
      * Scope for published posts only
      */
     public function scopePublished($query)
@@ -116,6 +158,17 @@ class Post extends Model
     public function scopeDrafts($query)
     {
         return $query->where('status', 'draft');
+    }
+
+    /**
+     * Scope for featured posts
+     */
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', true)
+                    ->where('status', 'published')
+                    ->whereNotNull('published_at')
+                    ->where('published_at', '<=', now());
     }
 
     /**
@@ -137,6 +190,24 @@ class Post extends Model
             'username' => $this->user->username,
             'slug' => $this->slug
         ]);
+    }
+
+    /**
+     * Get the featured image URL
+     */
+    public function getFeaturedImageUrlAttribute(): ?string
+    {
+        if (!$this->featured_image) {
+            return null;
+        }
+
+        // If it's already a full URL, return as is
+        if (filter_var($this->featured_image, FILTER_VALIDATE_URL)) {
+            return $this->featured_image;
+        }
+
+        // If it's a relative path, generate the full URL
+        return asset('storage/' . $this->featured_image);
     }
 
     /**
