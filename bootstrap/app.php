@@ -11,7 +11,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->web(append: [
+            \App\Http\Middleware\TrackUserActivity::class,
+        ]);
+        
+        $middleware->alias([
+            'cache.pages' => \App\Http\Middleware\CacheMiddleware::class,
+            'optimize' => \App\Http\Middleware\ImageOptimizationMiddleware::class,
+            'security.headers' => \App\Http\Middleware\SecurityHeadersMiddleware::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'no-cache-auth' => \App\Http\Middleware\NoCacheForAuthenticated::class,
+        ]);
+        
+        $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeadersMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

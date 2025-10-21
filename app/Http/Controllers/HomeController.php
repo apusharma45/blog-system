@@ -11,16 +11,14 @@ class HomeController extends Controller
 {
     public function index()
     {
-        // Cache posts for 5 minutes
-        $posts = Cache::remember('feed_posts', 300, function () {
-            return Post::with(['user', 'categories', 'tags'])
-                ->withCount('likes')
-                ->where('status', 'published')
-                ->latest('published_at')
-                ->paginate(10);
-        });
+        // Don't cache paginated results - cache only the base query
+        $posts = Post::with(['user', 'categories', 'tags'])
+            ->withCount('likes')
+            ->where('status', 'published')
+            ->latest('published_at')
+            ->paginate(10);
 
-        // Cache categories and tags for 1 hour
+        // Cache categories and tags for 1 hour (same for all users)
         $categories = Cache::remember('feed_categories', 3600, function () {
             return Category::orderBy('name')->get();
         });
@@ -37,7 +35,16 @@ class HomeController extends Controller
             return $post;
         });
 
-        return view('home', compact('posts', 'categories', 'tags'));
+        $response = response()->view('home', compact('posts', 'categories', 'tags'));
+        
+        // Add cache control headers to prevent browser caching for authenticated users
+        if (auth()->check()) {
+            $response->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                    ->header('Pragma', 'no-cache')
+                    ->header('Expires', '0');
+        }
+        
+        return $response;
     }
 
     public function about()

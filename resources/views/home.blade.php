@@ -305,11 +305,13 @@
                 </div>
 
                 <!-- Pagination -->
+                @if($posts->hasPages())
                 <div class="mt-12">
-                    <div class="bg-white rounded-2xl dark:bg-slate-900 p-4 shadow-lg border border-zinc-200 dark:border-zinc-800">
+                    <div class="bg-white rounded-2xl dark:bg-slate-900 p-6 shadow-lg border border-zinc-200 dark:border-zinc-800">
                         {{ $posts->links() }}
                     </div>
                 </div>
+                @endif
             </main>
         </div>
     </div>
@@ -347,6 +349,29 @@ article {
 
 article:hover {
     transform: translateY(-2px);
+}
+
+/* Pagination styling */
+.pagination nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+    .pagination nav {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .pagination nav > div {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 }
 </style>
 
