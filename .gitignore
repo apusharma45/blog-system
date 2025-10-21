@@ -21,3 +21,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Credential files (security)
+/storage/app/accounts.txt
+/storage/app/admin_credentials.txt
